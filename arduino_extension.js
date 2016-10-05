@@ -15,7 +15,8 @@
 
 (function(ext) {
 
-	var arduinoExtensionVersion='0.11'
+	
+  var arduinoExtensionVersion='0.12'
   var PIN_MODE = 0xF4,
     REPORT_DIGITAL = 0xD0,
     REPORT_ANALOG = 0xC0,
@@ -74,13 +75,6 @@
   var device = null;
   var inputData = null;
 
-  // TEMPORARY WORKAROUND
-  // Since _deviceRemoved is not used with Serial devices
-  // ping device regularly to check connection
-  var pinging = false;
-  var pingCount = 0;
-  var pinger = null;
-
   var hwList = new HWList();
 
   function HWList() {
@@ -106,6 +100,9 @@
     };
   }
 
+  
+
+	
   function init() {
 
 	console.log('Init of arduino-extension version ' + arduinoExtensionVersion);
@@ -120,46 +117,15 @@
     // TEMPORARY WORKAROUND
     // Since _deviceRemoved is not used with Serial devices
     // ping device regularly to check connection
-    pinger = setInterval(function() {
-		
-		console.log('In pinger ... ');
-		
-      if (pinging) {
-		  
-		console.log('Pinging active, pingcount is ' + pingCount);
-        if (++pingCount > 6) 
-		{
-			console.log('Out of pings, close device .... ');
-			
-          clearInterval(pinger);
-          pinger = null;
-          connected = false;
-          if (device) device.close();
-          device = null;
-          return;
-        }
-      } else {
-		  
-		console.log('Not pinging ');
-        if (!device) {
-          clearInterval(pinger);
-          pinger = null;
-          return;
-        }
-        queryFirmware();
-        pinging = true;
-      }
-    }, 2000);
+	
   }
 
   function hasCapability(pin, mode) {
-    if (pinModes[mode].indexOf(pin) > -1)
-      return true;
-    else
-      return false;
+    return  (pinModes[mode].indexOf(pin) > -1);
   }
 
-  function queryFirmware() {
+  function queryFirmware() {	
+	console.log('send queryFirmware: request' );
     var output = new Uint8Array([START_SYSEX, QUERY_FIRMWARE, END_SYSEX]);
     if (device) device.send(output.buffer);
   }
@@ -200,6 +166,33 @@
     minorVersion = minor;
   }
 
+  
+  var poller = null;
+  var watchdog = null;
+  
+  function ClosePoller() {	  
+	 if (poller) {
+		clearInterval(poller);
+		poller = null;		
+	} 
+  }
+  
+  function CloseWatchdog() {
+    if (watchdog) {
+		clearTimeout(watchdog);
+		watchdog = null;		
+	} 	
+  }
+  
+  function CloseDevice() {
+    if (device) {
+		device.set_receive_handler(null);		
+		device.close();
+		device = null;
+	}
+  }
+  
+  
   function processSysexMessage() {
     switch(storedInputData[0]) {
       case CAPABILITY_RESPONSE:
@@ -235,28 +228,27 @@
           notifyConnection = false;
         }, 100);
         break;
+		
       case QUERY_FIRMWARE:
-			console.log('Enter QUERY_FIRMWARE');
+	  
+		console.log('Got QUERY_FIRMWARE response ');		
         if (!connected) 
 		{
-			console.log('QUERY_FIRMWARE not connected');
-			
-          clearInterval(poller);
-          poller = null;
-          clearTimeout(watchdog);
-          watchdog = null;
-          connected = true;
+		  console.log('QUERY_FIRMWARE not connected');
+		  ClosePoller();
+		  CloseWatchdog();
+		  connected = true;
           setTimeout(init, 200);
         }
-		console.log('QUERY_FIRMWARE clear pinger');
-
-        pinging = false;
-        pingCount = 0;
+		
         break;
     }
   }
 
   function processInput(inputData) {
+	  
+	console.log('processInput .. bytes ' + inputData.length);
+	  
     for (var i=0; i < inputData.length; i++) {
       if (parsingSysex) {
         if (inputData[i] == END_SYSEX) {
@@ -513,63 +505,92 @@
     return Math.round(output);
   };
 
+  // AF OK
   ext._getStatus = function() {
-    if (!connected)
-      return { status:1, msg:'Disconnected' };
-    else
-      return { status:2, msg:'Connected' };
+	  
+    console.log('Device removed, device is ' + device + ' watchdog is ' + watchdog);
+    if(!device) return {status: 1, msg: 'Arduino disconnected'};
+	if(watchdog) return {status: 1, msg: 'Probing for Arduino'};
+	return {status: 2, msg: 'Arduino connected'};		
   };
 
+  // AF OK
   ext._deviceRemoved = function(dev) {
+	  
     console.log('Device removed');
-    // Not currently implemented with serial devices
+	if(device != dev) return;
+	if(poller) poller = clearInterval(poller);
+	device = null;	
   };
 
+  // AF OK
   var potentialDevices = [];
   ext._deviceConnected = function(dev) {
+	  
+    console.log('ext._deviceConnected');
+	  
     potentialDevices.push(dev);
     if (!device)
       tryNextDevice();
   };
 
-   var poller = null;
-  var watchdog = null;
+  
+  // AF OK
   function tryNextDevice() {
+
+    // If potentialDevices is empty, device will be undefined.
+	// That will get us back here next time a device is connected.  
     device = potentialDevices.shift();
     if (!device) return;
 
-    // Moved set_receive_handler to the ready callback for open to fix a race condition.
-    console.log('Attempting connection with ' + device.id);
-    device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 }, function() {
-      device.set_receive_handler(function(data) {
-        var inputData = new Uint8Array(data);
-        processInput(inputData);
-      });
-    });
+    console.log('tryNextDevice, setup receive handler for device  + device.id);
 
-    poller = setInterval(function() {
+	// Setup the receive handler before we opening the device, so we don't miss any data
+	device.set_receive_handler(function(data) {	
+
+	  console.log('Received: ' + data.byteLength);
+	  var inputData = new Uint8Array(data);
+	  processInput(inputData);
+    }
+
+    console.log('tryNextDevice, open the serial device + device.id);
+	
+	// Open the serial device...
+	device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 });	
+
+	// start to ping the Arduino board every 50 ms, stop if we receive a proper answer
+	// or when the watchdog timer will expire
+    poller = setInterval(function() 
+	{
       queryFirmware();
-    }, 1000);
+    }, 50);
 
+	// Give the Arduino board 2 seconds to respond to our ping request
     watchdog = setTimeout(function() {
-	  console.log('Timeout ... close device');
-      clearInterval(poller);
-      poller = null;
-      if (device) device.set_receive_handler(null);
-      if (device) device.close();
-      device = null;
+	  console.log('ping not received in time for device, close the device ');
+	  
+	  ClosePoller();
+	  CloseWatchdog();
+	  CloseDevice();
+
+	  // continue to try to open another device
       tryNextDevice();
-    }, 5000);
+    }, 2000);
   }
 
-
+  // AF OK
   ext._shutdown = function() {
-    // TODO: Bring all pins down
-    if (device) device.close();
-    if (poller) clearInterval(poller);
-    device = null;
+	  
+	console.log('ext._shutdown, close what we can close ');
+
+	ClosePoller();
+	CloseWatchdog();
+	CloseDevice();
+	
   };
 
+  
+  
   // Check for GET param 'lang'
   var paramString = window.location.search.replace(/^\?|\/$/g, '');
   var vars = paramString.split("&");
@@ -1135,7 +1156,7 @@
   var descriptor = {
     blocks: blocks[lang],
     menus: menus[lang],
-    url: 'http://khanning.github.io/scratch-arduino-extension'
+    url: 'http://afaber999.github.io/scratch-arduino-extension'
   };
 
   ScratchExtensions.register('Arduino', descriptor, ext, {type:'serial'});
