@@ -16,7 +16,7 @@
 	(function(ext) {
 
 		
-	  var arduinoExtensionVersion='0.15'
+	  var arduinoExtensionVersion='0.16'
 	  var PIN_MODE = 0xF4,
 		REPORT_DIGITAL = 0xD0,
 		REPORT_ANALOG = 0xC0,
@@ -510,7 +510,7 @@
 	  // AF OK
 	  ext._getStatus = function() {
 		  
-		console.log('Device removed, device is ' + device + ' watchdog is ' + watchdog);
+		//console.log('ext._getStatus removed, device is ' + device + ' watchdog is ' + watchdog);
 		if(!device) return {status: 1, msg: 'Arduino disconnected'};
 		if(watchdog) return {status: 1, msg: 'Probing for Arduino'};
 		return {status: 2, msg: 'Arduino connected'};		
@@ -519,12 +519,12 @@
 	  // AF OK
 	  ext._deviceRemoved = function(dev) {
 		  
-		//if(device != dev) return;
-		//console.log('Device removed');
+		console.log('Device removed');
+		if(device != dev) return;
 		
-		//ClosePoller();
-		//CloseWatchdog();
-		//CloseDevice();
+		ClosePoller();
+		CloseWatchdog();
+		CloseDevice();
 	  };
 
 	  // AF OK
