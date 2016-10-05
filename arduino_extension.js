@@ -16,7 +16,7 @@
 	(function(ext) {
 
 		
-	  var arduinoExtensionVersion='0.17'
+	  var arduinoExtensionVersion='0.18'
 	  var PIN_MODE = 0xF4,
 		REPORT_DIGITAL = 0xD0,
 		REPORT_ANALOG = 0xC0,
@@ -549,8 +549,16 @@
 		device = potentialDevices.shift();
 		if (!device) return;
 
-		console.log('tryNextDevice, setup receive handler for device '  + device.id);
 
+
+
+		console.log('tryNextDevice, open the serial device ' + device.id);
+		
+		// Open the serial device...
+		device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 });	
+
+		console.log('tryNextDevice, setup receive handler for device '  + device.id);
+		
 		// Setup the receive handler before we opening the device, so we don't miss any data
 		device.set_receive_handler(function(data) {	
 
@@ -559,18 +567,13 @@
 		  processInput(inputData);
 		  
 		});
-
-		console.log('tryNextDevice, open the serial device ' + device.id);
 		
-		// Open the serial device...
-		device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 });	
-
 		// start to ping the Arduino board every 50 ms, stop if we receive a proper answer
 		// or when the watchdog timer will expire
 		poller = setInterval(function() 
 		{
 		  queryFirmware();
-		}, 50);
+		}, 1000);
 
 		// Give the Arduino board 2 seconds to respond to our ping request
 		watchdog = setTimeout(function() {
@@ -582,7 +585,7 @@
 
 		  // continue to try to open another device
 		  tryNextDevice();
-		}, 5000);
+		}, 10000);
 	  }
 
 	  // AF OK
