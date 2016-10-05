@@ -553,7 +553,7 @@
 	  processInput(inputData);
     }
 
-    console.log('tryNextDevice, open the serial device + device.id);
+    console.log('tryNextDevice, open the serial device '+ device.id);
 	
 	// Open the serial device...
 	device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 });	
