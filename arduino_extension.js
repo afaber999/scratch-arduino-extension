@@ -15,6 +15,7 @@
 
 (function(ext) {
 
+	var arduinoExtensionVersion='0.10'
   var PIN_MODE = 0xF4,
     REPORT_DIGITAL = 0xD0,
     REPORT_ANALOG = 0xC0,
@@ -107,6 +108,8 @@
 
   function init() {
 
+	console.log('Init of arduino-extension version ' + arduinoExtensionVersion);
+
     for (var i = 0; i < 16; i++) {
       var output = new Uint8Array([REPORT_DIGITAL | i, 0x01]);
       if (device) device.send(output.buffer);
@@ -118,8 +121,16 @@
     // Since _deviceRemoved is not used with Serial devices
     // ping device regularly to check connection
     pinger = setInterval(function() {
+		
+		console.log('In pinger ... ');
+		
       if (pinging) {
-        if (++pingCount > 6) {
+		  
+		console.log('Pinging active, pingcount is ' + pingCount);
+        if (++pingCount > 6) 
+		{
+			console.log('Out of pings, close device .... ');
+			
           clearInterval(pinger);
           pinger = null;
           connected = false;
@@ -128,6 +139,8 @@
           return;
         }
       } else {
+		  
+		console.log('Not pinging ');
         if (!device) {
           clearInterval(pinger);
           pinger = null;
@@ -223,7 +236,11 @@
         }, 100);
         break;
       case QUERY_FIRMWARE:
-        if (!connected) {
+			console.log('Enter QUERY_FIRMWARE');
+        if (!connected) 
+		{
+			console.log('QUERY_FIRMWARE not connected');
+			
           clearInterval(poller);
           poller = null;
           clearTimeout(watchdog);
@@ -231,6 +248,8 @@
           connected = true;
           setTimeout(init, 200);
         }
+		console.log('QUERY_FIRMWARE clear pinger');
+
         pinging = false;
         pingCount = 0;
         break;
@@ -533,6 +552,7 @@
     }, 1000);
 
     watchdog = setTimeout(function() {
+	  console.log('Attempting connection('Timeout ... close device');
       clearInterval(poller);
       poller = null;
       if (device) device.set_receive_handler(null);
