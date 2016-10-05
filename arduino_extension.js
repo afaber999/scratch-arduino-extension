@@ -109,7 +109,7 @@
 
     for (var i = 0; i < 16; i++) {
       var output = new Uint8Array([REPORT_DIGITAL | i, 0x01]);
-      device.send(output.buffer);
+      if (device) device.send(output.buffer);
     }
 
     queryCapabilities();
@@ -148,21 +148,21 @@
 
   function queryFirmware() {
     var output = new Uint8Array([START_SYSEX, QUERY_FIRMWARE, END_SYSEX]);
-    device.send(output.buffer);
+    if (device) device.send(output.buffer);
   }
 
   function queryCapabilities() {
     console.log('Querying ' + device.id + ' capabilities');
     var msg = new Uint8Array([
         START_SYSEX, CAPABILITY_QUERY, END_SYSEX]);
-    device.send(msg.buffer);
+    if (device) device.send(msg.buffer);
   }
 
   function queryAnalogMapping() {
     console.log('Querying ' + device.id + ' analog mapping');
     var msg = new Uint8Array([
         START_SYSEX, ANALOG_MAPPING_QUERY, END_SYSEX]);
-    device.send(msg.buffer);
+    if (device) device.send(msg.buffer);
   }
 
   function setDigitalInputs(portNum, portData) {
@@ -205,7 +205,7 @@
           if (analogChannel[pin] != 127) {
             var out = new Uint8Array([
                 REPORT_ANALOG | analogChannel[pin], 0x01]);
-            device.send(out.buffer);
+            if (device) device.send(out.buffer);
           }
         }
         notifyConnection = true;
@@ -277,7 +277,7 @@
 
   function pinMode(pin, mode) {
     var msg = new Uint8Array([PIN_MODE, pin, mode]);
-    device.send(msg.buffer);
+    if (device) device.send(msg.buffer);
   }
 
   function analogRead(pin) {
@@ -314,7 +314,7 @@
         ANALOG_MESSAGE | (pin & 0x0F),
         val & 0x7F,
         val >> 7]);
-    device.send(msg.buffer);
+    if (device) device.send(msg.buffer);
   }
 
   function digitalWrite(pin, val) {
@@ -332,7 +332,7 @@
         DIGITAL_MESSAGE | portNum,
         digitalOutputData[portNum] & 0x7F,
         digitalOutputData[portNum] >> 0x07]);
-    device.send(msg.buffer);
+    if (device) device.send(msg.buffer);
   }
 
   function rotateServo(pin, deg) {
@@ -345,7 +345,7 @@
         ANALOG_MESSAGE | (pin & 0x0F),
         deg & 0x7F,
         deg >> 0x07]);
-    device.send(msg.buffer);
+    if (device) device.send(msg.buffer);
   }
 
   ext.whenConnected = function() {
@@ -526,8 +526,8 @@
     watchdog = setTimeout(function() {
       clearInterval(poller);
       poller = null;
-      device.set_receive_handler(null);
-      device.close();
+      if (device) device.set_receive_handler(null);
+      if (device) device.close();
       device = null;
       tryNextDevice();
     }, 5000);
