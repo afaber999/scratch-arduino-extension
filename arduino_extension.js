@@ -152,9 +152,11 @@
   }
 
   function queryCapabilities() {
-    console.log('Querying ' + device.id + ' capabilities');
+    if (device) console.log('Querying ' + device.id + ' capabilities');
+    
     var msg = new Uint8Array([
         START_SYSEX, CAPABILITY_QUERY, END_SYSEX]);
+    
     if (device) device.send(msg.buffer);
   }
 
