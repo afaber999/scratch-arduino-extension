@@ -16,7 +16,7 @@
 	(function(ext) {
 
 		
-	  var arduinoExtensionVersion='0.22'
+	  var arduinoExtensionVersion='0.23'
 	  
 	  var PIN_MODE = 0xF4,
 		REPORT_DIGITAL = 0xD0,
@@ -187,13 +187,14 @@
 			device.set_receive_handler(null);		
 			device.close();
 			device = null;
+			connected = false;
 		}
 	  }
 	  
 	  
 	  function processSysexMessage() {
 
-		console.log(' processSysexMessage()  storedInputData size  ' + storedInputData.length + ' sysexBytesRead ' + sysexBytesRead);
+		console.log(' processSysexMessage()  storedInputData message  ' + storedInputData[0].toString(16); + ' sysexBytesRead ' + sysexBytesRead);
 	  
 		switch(storedInputData[0]) 
 		{
@@ -239,10 +240,9 @@
 			
 		  case QUERY_FIRMWARE:
 		  
-			console.log('Got QUERY_FIRMWARE response ');		
+			console.log(' QUERY_FIRMWARE response ');		
 			if (!connected) 
 			{
-			  console.log('QUERY_FIRMWARE not connected');
 			  ClosePoller();
 			  CloseWatchdog();
 			  connected = true;
@@ -557,10 +557,10 @@
 		if (!device) return;
 
 
+		console.log('tryNextDevice Open device ' + device.id);
 		device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 }, function() {
 		  device.set_receive_handler(function(data) {
 			var inputData = new Uint8Array(data);
-			console.log('Received: ' + data.byteLength);
 			processInput(inputData);
 		  });
 		});
