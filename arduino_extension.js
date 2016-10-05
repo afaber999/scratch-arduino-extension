@@ -194,7 +194,7 @@
 	  
 	  function processSysexMessage() {
 
-		console.log(' processSysexMessage()  storedInputData message  ' + storedInputData[0].toString(16); + ' sysexBytesRead ' + sysexBytesRead);
+		console.log(' processSysexMessage()  storedInputData message  ' + storedInputData[0].toString(16) + ' sysexBytesRead ' + sysexBytesRead);
 	  
 		switch(storedInputData[0]) 
 		{
