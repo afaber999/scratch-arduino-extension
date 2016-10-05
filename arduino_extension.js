@@ -16,7 +16,7 @@
 	(function(ext) {
 
 		
-	  var arduinoExtensionVersion='0.21'
+	  var arduinoExtensionVersion='0.22'
 	  
 	  var PIN_MODE = 0xF4,
 		REPORT_DIGITAL = 0xD0,
@@ -192,7 +192,9 @@
 	  
 	  
 	  function processSysexMessage() {
-		
+
+		console.log(' processSysexMessage()  storedInputData size  ' + storedInputData.length + ' sysexBytesRead ' + sysexBytesRead);
+	  
 		switch(storedInputData[0]) 
 		{
 		  case CAPABILITY_RESPONSE:
@@ -202,11 +204,11 @@
 			for (var i = 1, pin = 0; pin < MAX_PINS; pin++) {
 				
 			  // get all modes for this pin
-			  while (storedInputData[i] != IGNORE) 
+			  while (storedInputData[i++] != IGNORE) 
 			  {
 				console.log(' adding pinmode  ' + storedInputData[i-1] + ' for pin number ' + pin );
 				pinModes[storedInputData[i-1]].push(pin);
-				i++; // handle next mode
+				
 				i++; // skip mode resolution
 			  }
 			  
@@ -257,6 +259,7 @@
 		  
 		for (var i=0; i < inputData.length; i++) {
 		  if (parsingSysex) {
+			  
 			if (inputData[i] == END_SYSEX) {
 			  parsingSysex = false;
 			  processSysexMessage();
