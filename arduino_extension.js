@@ -551,7 +551,7 @@
 	  console.log('Received: ' + data.byteLength);
 	  var inputData = new Uint8Array(data);
 	  processInput(inputData);
-    }
+        });
 
     console.log('tryNextDevice, open the serial device '+ device.id);
 	
