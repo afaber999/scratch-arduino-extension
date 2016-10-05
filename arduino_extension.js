@@ -16,7 +16,8 @@
 	(function(ext) {
 
 		
-	  var arduinoExtensionVersion='0.20'
+	  var arduinoExtensionVersion='0.21'
+	  
 	  var PIN_MODE = 0xF4,
 		REPORT_DIGITAL = 0xD0,
 		REPORT_ANALOG = 0xC0,
@@ -135,12 +136,7 @@
 	  function queryCapabilities() {
 		if (device) 
 		{
-		  var did = device.id;
-		  console.log('Querying ' + did + ' capabilities');
-		}
-		else
-		{
-		  console.log('Querying capabilities, device = null');
+		  console.log('Querying ' + device.id + ' capabilities');
 		}
 		
 		var msg = new Uint8Array([START_SYSEX, CAPABILITY_QUERY, END_SYSEX]);
@@ -196,24 +192,32 @@
 	  
 	  
 	  function processSysexMessage() {
-		switch(storedInputData[0]) {
+		
+		switch(storedInputData[0]) 
+		{
 		  case CAPABILITY_RESPONSE:
+		  
+			console.log(' processSysexMessage()  CAPABILITY_RESPONSE ');
+		  
 			for (var i = 1, pin = 0; pin < MAX_PINS; pin++) {
-			  while (storedInputData[i++] != 0x7F) 
-			  {
 				
-				// This helped reduce error over a noisy wireless serial connection
-				 if ( storedInputData[i-1] <= MAX_PINS )
-				 {
-				   pinModes[storedInputData[i-1]].push(pin);
-				 }
-				 i++; //Skip mode resolution
+			  // get all modes for this pin
+			  while (storedInputData[i] != IGNORE) 
+			  {
+				console.log(' adding pinmode  ' + storedInputData[i-1] + ' for pin number ' + pin );
+				pinModes[storedInputData[i-1]].push(pin);
+				i++; // handle next mode
+				i++; // skip mode resolution
 			  }
-			  if (i == sysexBytesRead) break;
+			  
+			  if (i >= sysexBytesRead) break;
 			}
+			
 			queryAnalogMapping();
 			break;
+			
 		  case ANALOG_MAPPING_RESPONSE:
+			console.log(' processSysexMessage()  ANALOG_MAPPING_RESPONSE ');
 			for (var pin = 0; pin < analogChannel.length; pin++)
 			  analogChannel[pin] = 127;
 			for (var i = 1; i < sysexBytesRead; i++)
