@@ -16,7 +16,7 @@
 	(function(ext) {
 
 		
-	  var arduinoExtensionVersion='0.16'
+	  var arduinoExtensionVersion='0.17'
 	  var PIN_MODE = 0xF4,
 		REPORT_DIGITAL = 0xD0,
 		REPORT_ANALOG = 0xC0,
@@ -533,8 +533,8 @@
 
 		potentialDevices.push(dev);
 		
-		//console.log('ext._deviceConnected');
-		if (!device) return;
+		console.log('ext._deviceConnected');
+		if (device) return;
 		
 		// start connecting
 		tryNextDevice();
