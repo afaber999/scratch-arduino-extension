@@ -152,10 +152,17 @@
   }
 
   function queryCapabilities() {
-    if (device) console.log('Querying ' + device.id + ' capabilities');
+    if (device) 
+    {
+      var did = device.id;
+      console.log('Querying ' + did + ' capabilities');
+    }
+    else
+    {
+      console.log('Querying capabilities, device = null');
+    }
     
-    var msg = new Uint8Array([
-        START_SYSEX, CAPABILITY_QUERY, END_SYSEX]);
+    var msg = new Uint8Array([START_SYSEX, CAPABILITY_QUERY, END_SYSEX]);
     
     if (device) device.send(msg.buffer);
   }
