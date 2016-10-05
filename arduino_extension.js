@@ -543,7 +543,7 @@
     device = potentialDevices.shift();
     if (!device) return;
 
-    console.log('tryNextDevice, setup receive handler for device  + device.id);
+    console.log('tryNextDevice, setup receive handler for device '  + device.id);
 
 	// Setup the receive handler before we opening the device, so we don't miss any data
 	device.set_receive_handler(function(data) {	
