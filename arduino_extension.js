@@ -100,6 +100,10 @@
     };
   }
 
+  function SendDataToDevice(data)
+  {
+      if (device) device.send(output.buffer);
+  }
   
 
 	
@@ -127,7 +131,7 @@
   function queryFirmware() {	
 	console.log('send queryFirmware: request' );
     var output = new Uint8Array([START_SYSEX, QUERY_FIRMWARE, END_SYSEX]);
-    if (device) device.send(output.buffer);
+    SendDataToDevice(output.buffer);
   }
 
   function queryCapabilities() {
@@ -143,14 +147,14 @@
     
     var msg = new Uint8Array([START_SYSEX, CAPABILITY_QUERY, END_SYSEX]);
     
-    if (device) device.send(msg.buffer);
+    SendDataToDevice(msg.buffer);
   }
 
   function queryAnalogMapping() {
     console.log('Querying ' + device.id + ' analog mapping');
     var msg = new Uint8Array([
         START_SYSEX, ANALOG_MAPPING_QUERY, END_SYSEX]);
-    if (device) device.send(msg.buffer);
+    SendDataToDevice(msg.buffer);
   }
 
   function setDigitalInputs(portNum, portData) {
@@ -220,7 +224,7 @@
           if (analogChannel[pin] != 127) {
             var out = new Uint8Array([
                 REPORT_ANALOG | analogChannel[pin], 0x01]);
-            if (device) device.send(out.buffer);
+            SendDataToDevice(out.buffer);
           }
         }
         notifyConnection = true;
@@ -297,7 +301,7 @@
 
   function pinMode(pin, mode) {
     var msg = new Uint8Array([PIN_MODE, pin, mode]);
-    if (device) device.send(msg.buffer);
+    SendDataToDevice(msg.buffer);
   }
 
   function analogRead(pin) {
@@ -334,7 +338,7 @@
         ANALOG_MESSAGE | (pin & 0x0F),
         val & 0x7F,
         val >> 7]);
-    if (device) device.send(msg.buffer);
+    SendDataToDevice(msg.buffer);
   }
 
   function digitalWrite(pin, val) {
@@ -352,7 +356,7 @@
         DIGITAL_MESSAGE | portNum,
         digitalOutputData[portNum] & 0x7F,
         digitalOutputData[portNum] >> 0x07]);
-    if (device) device.send(msg.buffer);
+    SendDataToDevice(msg.buffer);
   }
 
   function rotateServo(pin, deg) {
@@ -365,7 +369,7 @@
         ANALOG_MESSAGE | (pin & 0x0F),
         deg & 0x7F,
         deg >> 0x07]);
-    if (device) device.send(msg.buffer);
+    SendDataToDevice(msg.buffer);
   }
 
   ext.whenConnected = function() {
@@ -519,8 +523,10 @@
 	  
     console.log('Device removed');
 	if(device != dev) return;
-	if(poller) poller = clearInterval(poller);
-	device = null;	
+	
+	ClosePoller();
+	CloseWatchdog();
+	CloseDevice();
   };
 
   // AF OK
@@ -551,9 +557,10 @@
 	  console.log('Received: ' + data.byteLength);
 	  var inputData = new Uint8Array(data);
 	  processInput(inputData);
-        });
+	  
+	});
 
-    console.log('tryNextDevice, open the serial device '+ device.id);
+    console.log('tryNextDevice, open the serial device ' + device.id);
 	
 	// Open the serial device...
 	device.open({ stopBits: 0, bitRate: 57600, ctsFlowControl: 0 });	
