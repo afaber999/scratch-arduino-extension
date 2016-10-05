@@ -15,7 +15,7 @@
 
 (function(ext) {
 
-	var arduinoExtensionVersion='0.10'
+	var arduinoExtensionVersion='0.11'
   var PIN_MODE = 0xF4,
     REPORT_DIGITAL = 0xD0,
     REPORT_ANALOG = 0xC0,
