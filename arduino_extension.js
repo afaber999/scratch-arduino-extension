@@ -102,10 +102,8 @@
 
   function SendDataToDevice(data)
   {
-      if (device) device.send(output.buffer);
+      if (device) device.send(data);
   }
-  
-
 	
   function init() {
 
