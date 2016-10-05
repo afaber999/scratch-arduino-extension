@@ -552,7 +552,7 @@
     }, 1000);
 
     watchdog = setTimeout(function() {
-	  console.log('Attempting connection('Timeout ... close device');
+	  console.log('Timeout ... close device');
       clearInterval(poller);
       poller = null;
       if (device) device.set_receive_handler(null);
